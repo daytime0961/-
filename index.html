@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>음료 주문</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .sub {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 28px;
+    text-align: center;
+  }
+  .menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 20px;
+  }
+  .menu-btn {
+    background: #fff;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 14px;
+    padding: 18px 12px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #1a1a1a;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .menu-btn:hover { background: #f0f0f0; }
+  .menu-btn.selected {
+    background: #4A7FC1;
+    border-color: #4A7FC1;
+    color: #fff;
+  }
+  .menu-btn .icon { font-size: 22px; display: block; margin-bottom: 6px; }
+  .etc-box {
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 20px;
+    display: none;
+  }
+  .etc-box textarea {
+    width: 100%;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 14px;
+    resize: none;
+    height: 80px;
+    font-family: inherit;
+    color: #1a1a1a;
+    background: #fff;
+  }
+  .etc-box textarea:focus { outline: none; border-color: #4A7FC1; }
+  .name-box {
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 20px;
+  }
+  .name-box label {
+    font-size: 13px;
+    color: #666;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .name-box input {
+    width: 100%;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 15px;
+    font-family: inherit;
+    color: #1a1a1a;
+    background: #fff;
+  }
+  .name-box input:focus { outline: none; border-color: #4A7FC1; }
+  .submit-btn {
+    width: 100%;
+    max-width: 400px;
+    background: #4A7FC1;
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .submit-btn:hover { background: #3a6aaa; }
+  .submit-btn:disabled { background: #b0b0b0; cursor: default; }
+
+  /* 완료 화면 */
+  .done-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .done-icon {
+    font-size: 60px;
+    margin-bottom: 16px;
+  }
+  .done-screen h2 { font-size: 22px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
+  .done-screen p { font-size: 15px; color: #666; }
+
+  /* 관리자 결과 */
+  .admin-section {
+    width: 100%;
+    max-width: 400px;
+    margin-top: 32px;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 20px;
+  }
+  .admin-toggle {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: #888;
+    cursor: pointer;
+    width: 100%;
+  }
+  .admin-panel { display: none; margin-top: 14px; }
+  .admin-panel h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; color: #1a1a1a; }
+  .result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+  }
+  .result-item .count {
+    background: #4A7FC1;
+    color: #fff;
+    border-radius: 20px;
+    padding: 2px 12px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .order-list { margin-top: 16px; }
+  .order-list h4 { font-size: 13px; color: #888; margin-bottom: 8px; }
+  .order-card {
+    background: #f9f9f9;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: #333;
+  }
+  .order-card .name-tag { font-weight: 600; color: #4A7FC1; margin-right: 8px; }
+  .reset-btn {
+    margin-top: 14px;
+    width: 100%;
+    background: none;
+    border: 1px solid #e57373;
+    color: #e57373;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .reset-btn:hover { background: #fff0f0; }
+</style>
+</head>
+<body>
+
+<div id="order-screen">
+  <h1>☕ 음료 주문</h1>
+  <p class="sub">원하시는 음료를 선택해 주세요</p>
+
+  <div class="menu-grid">
+    <button class="menu-btn" onclick="select(this, '아이스 아메리카노')">
+      <span class="icon">🧊</span>아이스<br>아메리카노
+    </button>
+    <button class="menu-btn" onclick="select(this, '뜨거운 아메리카노')">
+      <span class="icon">☕</span>뜨거운<br>아메리카노
+    </button>
+    <button class="menu-btn" onclick="select(this, '아이스 라떼')">
+      <span class="icon">🥛</span>아이스<br>라떼
+    </button>
+    <button class="menu-btn" onclick="select(this, '뜨거운 라떼')">
+      <span class="icon">🍵</span>뜨거운<br>라떼
+    </button>
+    <button class="menu-btn" onclick="select(this, '캐모마일티')">
+      <span class="icon">🌼</span>캐모마일티
+    </button>
+    <button class="menu-btn" onclick="select(this, '기타')">
+      <span class="icon">✏️</span>기타
+    </button>
+  </div>
+
+  <div class="etc-box" id="etc-box">
+    <textarea id="etc-input" placeholder="원하시는 음료를 적어주세요"></textarea>
+  </div>
+
+  <div class="name-box">
+    <label>이름 (선택)</label>
+    <input type="text" id="name-input" placeholder="홍길동">
+  </div>
+
+  <button class="submit-btn" id="submit-btn" onclick="submitOrder()">주문하기</button>
+
+  <div class="admin-section">
+    <button class="admin-toggle" onclick="toggleAdmin()">관리자 결과 보기</button>
+    <div class="admin-panel" id="admin-panel">
+      <h3>집계 결과</h3>
+      <div id="result-summary"></div>
+      <div class="order-list">
+        <h4>개별 주문 내역</h4>
+        <div id="order-list"></div>
+      </div>
+      <button class="reset-btn" onclick="resetOrders()">전체 초기화</button>
+    </div>
+  </div>
+</div>
+
+<div class="done-screen" id="done-screen">
+  <div class="done-icon">✅</div>
+  <h2>주문 완료!</h2>
+  <p id="done-msg"></p>
+  <br>
+  <button class="submit-btn" style="max-width:200px; margin-top:20px;" onclick="resetForm()">다시 주문하기</button>
+</div>
+
+<script>
+let selected = null;
+
+function select(btn, menu) {
+  document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selected = menu;
+  document.getElementById('etc-box').style.display = (menu === '기타') ? 'block' : 'none';
+}
+
+function submitOrder() {
+  if (!selected) { alert('음료를 선택해 주세요.'); return; }
+  let menu = selected;
+  if (menu === '기타') {
+    const etc = document.getElementById('etc-input').value.trim();
+    if (!etc) { alert('기타 음료를 입력해 주세요.'); return; }
+    menu = '기타: ' + etc;
+  }
+  const name = document.getElementById('name-input').value.trim() || '익명';
+
+  const orders = JSON.parse(localStorage.getItem('cafe_orders') || '[]');
+  orders.push({ name, menu, time: new Date().toLocaleTimeString('ko-KR') });
+  localStorage.setItem('cafe_orders', JSON.stringify(orders));
+
+  document.getElementById('done-msg').textContent = name + '님의 ' + menu + ' 주문이 접수되었습니다.';
+  document.getElementById('order-screen').style.display = 'none';
+  document.getElementById('done-screen').style.display = 'flex';
+}
+
+function resetForm() {
+  selected = null;
+  document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('etc-input').value = '';
+  document.getElementById('name-input').value = '';
+  document.getElementById('etc-box').style.display = 'none';
+  document.getElementById('done-screen').style.display = 'none';
+  document.getElementById('order-screen').style.display = 'block';
+}
+
+function toggleAdmin() {
+  const panel = document.getElementById('admin-panel');
+  if (panel.style.display === 'block') {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = 'block';
+  renderAdmin();
+}
+
+function renderAdmin() {
+  const orders = JSON.parse(localStorage.getItem('cafe_orders') || '[]');
+  const counts = {};
+  orders.forEach(o => { counts[o.menu] = (counts[o.menu] || 0) + 1; });
+
+  const summary = document.getElementById('result-summary');
+  if (orders.length === 0) {
+    summary.innerHTML = '<p style="color:#aaa;font-size:13px;">아직 주문이 없습니다.</p>';
+  } else {
+    summary.innerHTML = Object.entries(counts).sort((a,b)=>b[1]-a[1])
+      .map(([menu, cnt]) => `<div class="result-item"><span>${menu}</span><span class="count">${cnt}건</span></div>`).join('');
+  }
+
+  const list = document.getElementById('order-list');
+  list.innerHTML = orders.map(o =>
+    `<div class="order-card"><span class="name-tag">${o.name}</span>${o.menu} <span style="color:#bbb;font-size:12px;">${o.time}</span></div>`
+  ).join('') || '<p style="color:#aaa;font-size:13px;">없음</p>';
+}
+
+function resetOrders() {
+  if (confirm('전체 주문을 초기화하시겠습니까?')) {
+    localStorage.removeItem('cafe_orders');
+    renderAdmin();
+  }
+}
+</script>
+</body>
+</html>

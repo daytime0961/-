@@ -188,6 +188,33 @@
     cursor: pointer;
   }
   .reset-btn:hover { background: #fff0f0; }
+  .order-card { position: relative; }
+  .order-actions { display: flex; gap: 6px; margin-top: 8px; }
+  .btn-edit {
+    background: none; border: 1px solid #4A7FC1; color: #4A7FC1;
+    border-radius: 6px; padding: 3px 10px; font-size: 12px; cursor: pointer;
+  }
+  .btn-edit:hover { background: #eef3fb; }
+  .btn-del {
+    background: none; border: 1px solid #e57373; color: #e57373;
+    border-radius: 6px; padding: 3px 10px; font-size: 12px; cursor: pointer;
+  }
+  .btn-del:hover { background: #fff0f0; }
+  .edit-row { display: none; margin-top: 8px; gap: 6px; flex-wrap: wrap; }
+  .edit-row select, .edit-row input {
+    border: 1px solid #ddd; border-radius: 6px; padding: 4px 8px;
+    font-size: 13px; font-family: inherit; color: #1a1a1a; background: #fff;
+  }
+  .edit-row select { flex: 1; min-width: 120px; }
+  .edit-row input { flex: 1; min-width: 80px; }
+  .btn-save {
+    background: #4A7FC1; color: #fff; border: none;
+    border-radius: 6px; padding: 4px 12px; font-size: 12px; cursor: pointer;
+  }
+  .btn-cancel-edit {
+    background: none; border: 1px solid #ccc; color: #888;
+    border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -302,6 +329,8 @@ function toggleAdmin() {
   renderAdmin();
 }
 
+const MENUS = ['아이스 아메리카노','뜨거운 아메리카노','아이스 라떼','뜨거운 라떼','아이스 캐모마일티','뜨거운 캐모마일티','기타'];
+
 function renderAdmin() {
   const orders = JSON.parse(localStorage.getItem('cafe_orders') || '[]');
   const counts = {};
@@ -316,9 +345,63 @@ function renderAdmin() {
   }
 
   const list = document.getElementById('order-list');
-  list.innerHTML = orders.map(o =>
-    `<div class="order-card"><span class="name-tag">${o.name}</span>${o.menu} <span style="color:#bbb;font-size:12px;">${o.time}</span></div>`
-  ).join('') || '<p style="color:#aaa;font-size:13px;">없음</p>';
+  if (orders.length === 0) {
+    list.innerHTML = '<p style="color:#aaa;font-size:13px;">없음</p>';
+    return;
+  }
+  list.innerHTML = orders.map((o, i) => {
+    const menuOpts = MENUS.map(m => `<option value="${m}" ${o.menu===m||o.menu.startsWith('기타')&&m==='기타'?'selected':''}>${m}</option>`).join('');
+    const isEtc = o.menu.startsWith('기타: ');
+    const etcVal = isEtc ? o.menu.replace('기타: ','') : '';
+    return `
+    <div class="order-card" id="card-${i}">
+      <div>
+        <span class="name-tag">${o.name}</span>${o.menu}
+        <span style="color:#bbb;font-size:12px;margin-left:4px;">${o.time}</span>
+      </div>
+      <div class="order-actions">
+        <button class="btn-edit" onclick="toggleEdit(${i})">수정</button>
+        <button class="btn-del" onclick="deleteOrder(${i})">삭제</button>
+      </div>
+      <div class="edit-row" id="edit-${i}" style="display:none;">
+        <select id="sel-${i}" onchange="toggleEtcInput(${i})">${menuOpts}</select>
+        <input type="text" id="etc-edit-${i}" placeholder="기타 내용" value="${etcVal}" style="display:${isEtc?'block':'none'};">
+        <input type="text" id="name-edit-${i}" placeholder="이름" value="${o.name}">
+        <button class="btn-save" onclick="saveEdit(${i})">저장</button>
+        <button class="btn-cancel-edit" onclick="toggleEdit(${i})">취소</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleEdit(i) {
+  const row = document.getElementById('edit-' + i);
+  row.style.display = row.style.display === 'flex' ? 'none' : 'flex';
+}
+
+function toggleEtcInput(i) {
+  const sel = document.getElementById('sel-' + i).value;
+  document.getElementById('etc-edit-' + i).style.display = sel === '기타' ? 'block' : 'none';
+}
+
+function saveEdit(i) {
+  const orders = JSON.parse(localStorage.getItem('cafe_orders') || '[]');
+  const sel = document.getElementById('sel-' + i).value;
+  const etcVal = document.getElementById('etc-edit-' + i).value.trim();
+  const nameVal = document.getElementById('name-edit-' + i).value.trim() || '익명';
+  if (sel === '기타' && !etcVal) { alert('기타 내용을 입력해 주세요.'); return; }
+  orders[i].menu = sel === '기타' ? '기타: ' + etcVal : sel;
+  orders[i].name = nameVal;
+  localStorage.setItem('cafe_orders', JSON.stringify(orders));
+  renderAdmin();
+}
+
+function deleteOrder(i) {
+  if (!confirm('이 주문을 삭제하시겠습니까?')) return;
+  const orders = JSON.parse(localStorage.getItem('cafe_orders') || '[]');
+  orders.splice(i, 1);
+  localStorage.setItem('cafe_orders', JSON.stringify(orders));
+  renderAdmin();
 }
 
 function resetOrders() {
